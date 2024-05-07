@@ -10,48 +10,29 @@ def scale_labels(x):
 
 class Data:
     def __init__(self,v0x,v0y) -> None:
-        self.v0x=v0x
-        self.x0y=v0y
-        self.X=[0]
-        self.Y=[0]
-        self.Vx=[v0x]
-        self.Vy=[v0y]
-        self.Ax=[0]
-        self.Ay=[0]
+        self.X:list[float]=[0]
+        self.Y:list[float]=[0]
+        self.Vx:list[float]=[v0x]
+        self.Vy:list[float]=[v0y]
+        self.Ax:list[float]=[0]
+        self.Ay:list[float]=[0]
 
 class Calculation:
     def __init__(self,config:Config=Config()) -> None:
         self.config=config
         self.data=Data(config.v0*cos(math.radians(config.alfa)),
                        config.v0*sin(math.radians(config.alfa)))
-        
-    def _generateVy(self,Vy_):
-        return Vy_ - (self.config.g +self.config.b*self.config.step*Vy_/self.config.m)*self.config.step
-    def _generateVx(self,Vx_):
-        return Vx_ - ((self.config.b*self.config.step)*Vx_/self.config.m)*self.config.step
+    def calculate(self):
+        for i in range (1,int(self.config.sym_time/self.config.step)):
+            self.data.Ax.append((-self.config.b/self.config.m)*self.data.Vx[i-1])
+            self.data.Vx.append(self.data.Vx[i-1]+self.data.Ax[i]*self.config.step)
+            self.data.X.append(self.data.X[i-1]+self.data.Vx[i]*self.config.step+self.data.Ax[i]*self.config.step*self.config.step/2)
 
-    def _generateAx(self,Vx_):
-        return -(self.config.b*Vx_/self.config.m)
-    def _generateAy(self,Vy_):
-        return -(self.config.g+self.config.b*Vy_/self.config.m)
-
-    def _generateX(self,Ax_,Vx_,X_):
-        return X_+Vx_*self.config.step+Ax_*self.config.step*self.config.step
-    def _generateY(self,Ay_,Vy_,Y_):
-        return Y_+Vy_*self.config.step+Ay_*self.config.step*self.config.step
-    
-    def calculateXY(self):
-        for i in range(0,int(self.config.sym_time/self.config.step)):
-            self.data.Ay.append(self._generateAy(self.data.Vy[i]))
-            self.data.Ax.append(self._generateAx(self.data.Vx[i]))
-            x_=self._generateX(self.data.Ax[i],self.data.Vx[i],self.data.X[i])
-            y_=self._generateY(self.data.Ay[i],self.data.Vy[i],self.data.Y[i])
-            if y_ <= 0:
+            self.data.Ay.append((-self.config.g-(self.config.b/self.config.m)*self.data.Vy[i-1]))
+            self.data.Vy.append(self.data.Vy[i-1]+self.data.Ay[i]*self.config.step)
+            self.data.Y.append(self.data.Y[i-1]+self.data.Vy[i]*self.config.step+(self.data.Ay[i]*(self.config.step*self.config.step/2)))
+            if self.data.Y[-1] <=0:
                 break
-            self.data.Y.append(y_)
-            self.data.X.append(x_)
-            self.data.Vy.append(self._generateVy(self.data.Vy[i]))
-            self.data.Vx.append(self._generateVx(self.data.Vx[i]))
 
     def calculateMaxYRange(self):
         y_max=0
@@ -67,19 +48,17 @@ class Calculation:
 
     def plotXY(self):
         plt.figure(figsize=(21,9))
-        """
         plt.subplot(2,3,1)
-        plt.plot(self.data.Ax,label="Ax",color="red")
-        plt.plot(self.data.Ay,label="Ay",color="blue")
+        plt.plot(self.data.Ax[1:],label="Ax",color="red")
+        plt.plot(self.data.Ay[1:],label="Ay",color="blue")
         plt.xlabel("t [s] ")
         plt.ylabel(r"$A[\frac{m}{s^2}]$")
         plt.legend()
         plt.xticks(np.arange(0, len(self.data.Ay), step=2000),labels=scale_labels(np.arange(0,len(self.data.Ay),step=2000)))
         plt.grid(True)
         plt.title("Wykres przyśpieszenia od czasu")
-        """
 
-        plt.subplot(2,3,1)
+        plt.subplot(2,3,2)
         plt.plot(self.data.X,color="red",label="X")
         plt.plot(self.data.Y,color="blue",label="Y")
         plt.xlabel("t [s]")
@@ -89,7 +68,7 @@ class Calculation:
         plt.grid(True)
         plt.title("Wykres położenia od czasu")
 
-        plt.subplot(2,3,2)
+        plt.subplot(2,3,3)
         plt.plot(self.data.Vx,label="Vx",color="red")
         plt.plot(self.data.Vy,label="Vy",color="blue")
         plt.xlabel("t [s]")
@@ -118,7 +97,7 @@ class Calculation:
             
 
         
-        plt.subplot(2,3,3)
+        plt.subplot(2,3,5)
         plt.plot(self.data.X,self.data.Y)
         plt.xlabel("X [m]")
         plt.ylabel("Y [m]")
@@ -138,22 +117,22 @@ class Calculation:
         plt.tight_layout()
         plt.show()
 
-    def CalculateAllAlfa(self):
-        map:dict={}
+    def CalculateAllAlfa(self)->dict[str,float]:
+        my_map:dict[str,float]={}
         xyz=self.config.alfa
         for alfa in range(0,90):
             calc=Calculation()
             calc.config.alfa=alfa
-            calc.calculateXY()
-            map[str(alfa)]=calc.calculateMaxXRange()
+            calc.calculate()
+            my_map[str(alfa)]=calc.calculateMaxXRange()
         self.config.alfa=xyz
-        map.pop("0")
-        return map
+        my_map.pop("0")
+        return my_map
         
 
 if __name__ == "__main__":
     calc=Calculation()
-    calc.calculateXY()
+    calc.calculate()
     print(f"X: {calc.calculateMaxXRange()}")
     print(f"Y: {calc.calculateMaxYRange()}")
     #print(f"Best alfa: {calc.findBestAlfa()}")
