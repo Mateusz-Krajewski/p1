@@ -36,10 +36,14 @@ class Calculation:
 
     def calculateMaxYRange(self):
         y_max=0
+        y_max_time=0
+        i = 0 
         for y in self.data.Y:
             if y > y_max:
                 y_max=y
-        return y_max
+                y_max_time = i*self.config.step
+            i+=1
+        return y_max,y_max_time
     def calculateMaxXRange(self):
         return self.data.X[-1]
     
@@ -106,11 +110,13 @@ class Calculation:
 
         plt.subplot(2,3,6)
         plt.axis('off')
+
+        y_max,y_max_time = self.calculateMaxYRange()
         plt.text(0.2,0.5,
-                 f"Odległość strzału X: {round(self.calculateMaxXRange(),2)}, \n"+
-                 f"Odległość strzału oś Y: {round(self.calculateMaxYRange(),2)}, \n"+
-                 f"czas lotu: {round(self.calculateFlyTime(),2)}, \n"+
-                 f"Najlepszy kąt: {bestAngle}",
+                 f"Odległość strzału X: {round(self.calculateMaxXRange(),2)} [m], \n"+
+                 f"Odległość strzału oś Y: {round(y_max,2)} [m], w czasie: {round(y_max_time,2)} [s], \n"+
+                 f"czas lotu: {round(self.calculateFlyTime(),2)} [s], \n"+
+                 f"Najlepszy kąt: {bestAngle} [*]",
                  horizontalalignment='left',
                             verticalalignment='center', fontsize=12)
 
