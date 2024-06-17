@@ -1,2 +1,5 @@
 matplotlib
 sympy
+numpy
+pybind11
+cppimport

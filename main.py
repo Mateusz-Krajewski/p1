@@ -1,9 +1,9 @@
-import matplotlib
 import matplotlib.pyplot as plt
 from config import Config
 from math import sin,cos
 import math
 import numpy as np
+import calculation
 
 def scale_labels(x):
     return np.round(x/1000).astype(int)
@@ -23,16 +23,26 @@ class Calculation:
         self.data=Data(config.v0*cos(math.radians(config.alfa)),
                        config.v0*sin(math.radians(config.alfa)))
     def calculate(self):
-        for i in range (1,int(self.config.sym_time/self.config.step)):
-            self.data.Ax.append((-self.config.b/self.config.m)*self.data.Vx[i-1])
-            self.data.Vx.append(self.data.Vx[i-1]+self.data.Ax[i]*self.config.step)
-            self.data.X.append(self.data.X[i-1]+self.data.Vx[i]*self.config.step+self.data.Ax[i]*self.config.step*self.config.step/2)
+        calc = calculation.Calculation(self.config.v0*cos(math.radians(self.config.alfa)),
+                       self.config.v0*sin(math.radians(self.config.alfa)))
 
-            self.data.Ay.append((-self.config.g-(self.config.b/self.config.m)*self.data.Vy[i-1]))
-            self.data.Vy.append(self.data.Vy[i-1]+self.data.Ay[i]*self.config.step)
-            self.data.Y.append(self.data.Y[i-1]+self.data.Vy[i]*self.config.step+(self.data.Ay[i]*(self.config.step*self.config.step/2)))
-            if self.data.Y[-1] <=0:
-                break
+        calc.Calculate(int(self.config.sym_time/self.config.step), self.config.g, self.config.b, self.config.m, self.config.step)
+        self.data.X = calc.GetX()
+        self.data.Y = calc.GetY()
+        self.data.Vx = calc.GetVX()
+        self.data.Vy = calc.GetVY()
+        self.data.Ax = calc.GetAX()
+        self.data.Ay = calc.GetAY()
+        # for i in range (1,int(self.config.sym_time/self.config.step)):
+        #     self.data.Ax.append((-self.config.b/self.config.m)*self.data.Vx[i-1])
+        #     self.data.Vx.append(self.data.Vx[i-1]+self.data.Ax[i]*self.config.step)
+        #     self.data.X.append(self.data.X[i-1]+self.data.Vx[i]*self.config.step+self.data.Ax[i]*self.config.step*self.config.step/2)
+
+        #     self.data.Ay.append((-self.config.g-(self.config.b/self.config.m)*self.data.Vy[i-1]))
+        #     self.data.Vy.append(self.data.Vy[i-1]+self.data.Ay[i]*self.config.step)
+        #     self.data.Y.append(self.data.Y[i-1]+self.data.Vy[i]*self.config.step+(self.data.Ay[i]*(self.config.step*self.config.step/2)))
+        #     if self.data.Y[-1] <=0:
+        #         break
 
     def calculateMaxYRange(self):
         y_max=0
@@ -114,7 +124,7 @@ class Calculation:
         y_max,y_max_time = self.calculateMaxYRange()
         plt.text(0.2,0.5,
                  f"Odległość strzału X: {round(self.calculateMaxXRange(),2)} [m], \n"+
-                 f"Odległość strzału oś Y: {round(y_max,2)} [m], w czasie: {round(y_max_time,2)} [s], \n"+
+                 f"Odległość strzału oś Y: {round(y_max,2)} [m],\n w czasie: {round(y_max_time,2)} [s], \n"+
                  f"czas lotu: {round(self.calculateFlyTime(),2)} [s], \n"+
                  f"Najlepszy kąt: {bestAngle} [*]",
                  horizontalalignment='left',
